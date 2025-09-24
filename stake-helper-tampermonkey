@@ -1,0 +1,260 @@
+// ==UserScript==
+// @name         Stake Helper — Guide with Tabs (GitHub + Markdown)
+// @namespace    http://tampermonkey.net/
+// @version      3.0
+// @description  Справочник: вкладки, хранение локально/GM, загрузка данных из GitHub, поддержка Markdown и картинок.
+// @author       You
+// @match        https://stake.com/*
+// @include      /^https:\/\/stake\d+\.com\/.*/
+// @grant        GM_addStyle
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_download
+// @run-at       document-idle
+// ==/UserScript==
+
+(async function () {
+  'use strict';
+
+  const STORAGE_KEY = 'stake_helper_tabs_v2';
+  const GITHUB_URL = "https://raw.githubusercontent.com/username/repo/branch/stake-helper.json";
+  // ⚠️ ЗАМЕНИ на свой raw-URL в GitHub
+
+  // Библиотека для Markdown
+  const markedScript = document.createElement('script');
+  markedScript.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+  document.head.appendChild(markedScript);
+  await new Promise(r => markedScript.onload = r);
+
+  const DEFAULT_DATA = {
+    "Общая информация": "# Stake Helper\nЗдесь пишем **общую информацию**...",
+    "Batcher": "## Batcher\nОписание работы батчера...",
+    "PSDP - Dice Stats Panel": "## PSDP\nОписание PSDP...",
+    "Коэффициенты": "## Коэффициенты\nИнформация о коэффициентах, и как с ними работать.",
+    "Inferno": "## Информация о работе в Inferno."
+  };
+
+  // ---- Helpers GM/localStorage ----
+  function isPromise(obj) { return !!obj && typeof obj.then === 'function'; }
+
+  async function getValue(key, defaultVal) {
+    try {
+      if (typeof GM_getValue === 'function') {
+        const r = GM_getValue(key);
+        if (isPromise(r)) return await r ?? defaultVal;
+        return r ?? defaultVal;
+      }
+      if (typeof GM === 'object' && typeof GM.getValue === 'function') {
+        const r = await GM.getValue(key);
+        return r ?? defaultVal;
+      }
+    } catch {}
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return defaultVal;
+      return JSON.parse(raw);
+    } catch {
+      return defaultVal;
+    }
+  }
+
+  async function setValue(key, val) {
+    try {
+      if (typeof GM_setValue === 'function') {
+        const r = GM_setValue(key, val);
+        if (isPromise(r)) await r;
+        return;
+      }
+      if (typeof GM === 'object' && typeof GM.setValue === 'function') {
+        await GM.setValue(key, val);
+        return;
+      }
+    } catch {}
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  function addStyle(css) {
+    try {
+      if (typeof GM_addStyle === 'function') { GM_addStyle(css); return; }
+    } catch {}
+    const s = document.createElement('style');
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
+
+  // ---- CSS ----
+  addStyle(`
+    #stake-helper-btn {
+      position: fixed;
+      right: 18px;
+      top: 18px;
+      z-index: 2147483647;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,#2f7ed8,#1a84d6);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #stake-helper-btn svg { width: 22px; height: 22px; fill: white; }
+
+    #stake-helper-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483646;
+    }
+    #stake-helper-modal {
+      width: min(920px, 94%);
+      max-height: 86vh;
+      background: #0f1724;
+      color: #e6eef8;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 12px 40px rgba(2,6,23,0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    #stake-tabs { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+    .stake-tab {
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+    }
+    .stake-tab.active { background:#1a84d6; color: white; }
+    #stake-view {
+      flex:1 1 auto;
+      width:100%;
+      min-height:300px;
+      max-height:60vh;
+      background: #071022;
+      border:1px solid rgba(255,255,255,0.05);
+      border-radius:8px;
+      padding:16px;
+      overflow-y:auto;
+      color:#cfe7ff;
+      font-size:14px;
+      line-height:1.55;
+      box-sizing:border-box;
+    }
+    #stake-view img { max-width:100%; border-radius:6px; margin:6px 0; }
+    #stake-controls { display:flex; gap:8px; justify-content:flex-end; align-items:center; }
+    .stake-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.05);
+      padding:6px 10px;
+      border-radius:6px;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .stake-btn:hover { background: rgba(255,255,255,0.14); }
+    #stake-meta { color:#9fb3d9; font-size:12px; margin-left:6px; }
+  `);
+
+  // ---- UI ----
+  const btn = document.createElement('div');
+  btn.id = 'stake-helper-btn';
+  btn.title = 'Открыть справку (Shift+?)';
+  btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12,2 C6.48,2 2,6.48 2,12s4.48,10 10,10 10-4.48 10-10S17.52,2 12,2z M12,17c-.55,0-1-.45-1-1s.45-1 1-1 1,.45 1,1-.45,1-1,1zm1.07-4.75c-.9.92-1.07 1.25-1.07 2.25h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.37.59-.88.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>`;
+  document.body.appendChild(btn);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'stake-helper-overlay';
+  overlay.innerHTML = `
+    <div id="stake-helper-modal">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div id="stake-tabs"></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div id="stake-meta">Источник: GitHub / локально</div>
+        </div>
+      </div>
+      <div id="stake-view"></div>
+      <div id="stake-controls">
+        <button class="stake-btn" id="close">Закрыть</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // ---- Data ----
+  async function fetchGithubData(url) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return await res.json();
+    } catch (e) {
+      console.warn("Ошибка загрузки GitHub:", e);
+      return null;
+    }
+  }
+
+  let data = await fetchGithubData(GITHUB_URL);
+  if (!data) {
+    data = await getValue(STORAGE_KEY, DEFAULT_DATA);
+  } else {
+    await setValue(STORAGE_KEY, data);
+  }
+  if (!data || typeof data !== 'object') data = DEFAULT_DATA;
+
+  let active = Object.keys(data)[0] || 'Общее';
+
+  const tabsEl = overlay.querySelector('#stake-tabs');
+  const viewEl = overlay.querySelector('#stake-view');
+
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    Object.keys(data).forEach(name => {
+      const tab = document.createElement('div');
+      tab.className = 'stake-tab' + (name === active ? ' active' : '');
+      tab.textContent = name;
+      tab.addEventListener('click', () => {
+        active = name;
+        renderTabs();
+        renderText();
+      });
+      tabsEl.appendChild(tab);
+    });
+  }
+
+  function renderText() {
+    try {
+      viewEl.innerHTML = marked.parse(data[active] || '');
+    } catch (e) {
+      viewEl.textContent = data[active] || '';
+    }
+  }
+
+  // ---- Events ----
+  btn.addEventListener('click', () => {
+    overlay.style.display = 'flex';
+    renderTabs();
+    renderText();
+  });
+  overlay.querySelector('#close').addEventListener('click', () => overlay.style.display = 'none');
+
+  window.addEventListener('keydown', (e) => {
+    if (e.shiftKey && (e.key === '?' || e.key === '/')) {
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+      e.preventDefault();
+      overlay.style.display = overlay.style.display === 'flex' ? 'none' : 'flex';
+      if (overlay.style.display === 'flex') { renderTabs(); renderText(); }
+    }
+    if (e.key === 'Escape' && overlay.style.display === 'flex') overlay.style.display = 'none';
+  });
+
+  console.info('Stake Helper (GitHub + Markdown) загружен — Shift+? открыть.');
+
+})();
