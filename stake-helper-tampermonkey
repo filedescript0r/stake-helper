@@ -105,14 +105,14 @@
 
   // ---- Ссылки на raw GitHub Markdown ----
   const TAB_URLS = {
-    "Info":              "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/info.md",
-    "Batcher":           "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/batcher.md",
-    "PSDP":              "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/psdp.md",
-    "Odds":              "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/odds.md",
-    "Inferno":           "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/inferno.md",
-    "Packages":          "No_Link",
-    "Price":             "No_Link",
-    "Support":           "No_Link"
+    "[1]Info":              "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/info.md",
+    "[2]Batcher":           "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/batcher.md",
+    "[3]PSDP":              "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/psdp.md",
+    "[4]Odds":              "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/odds.md",
+    "[5]Inferno":           "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/inferno.md",
+    "[6] Packages":          "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/packages.md",
+    "[7] Price":             "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/price.md",
+    "[8] Support":           "https://raw.githubusercontent.com/filedescript0r/stake-helper/refs/heads/main/docs/support.md"
   };
 
   async function fetchMarkdown(url) {
