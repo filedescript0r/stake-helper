@@ -68,29 +68,3 @@
 
 ---
 
----
-
-## 🔗 Схема потока данных
-
-```mermaid
-flowchart LR
-    subgraph Source[Источник данных]
-        A1[🎲 Stake Dice]
-        A2[🎰 Stake Primedice]
-    end
-
-    subgraph ProcessingUnit["PSDP + Batcher"]
-        B1[🔎 PSDP: предобработка]
-        B2[📦 Batcher: атомарная доставка]
-    end
-
-    subgraph Inferno[🔥 INFERNO]
-        C1[💾 Сохранение данных]
-        C2[📊 Аналитика и визуализация]
-    end
-
-    A1 --> ProcessingUnit
-    A2 --> ProcessingUnit
-    ProcessingUnit --> Inferno
-
-
