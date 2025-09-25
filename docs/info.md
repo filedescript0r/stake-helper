@@ -79,7 +79,7 @@ flowchart LR
         A2[🎰 Stake Primedice]
     end
 
-    subgraph ProcessingUnit[PSDP + Batcher<br/>(две панели, один инструмент)]
+    subgraph ProcessingUnit["PSDP + Batcher\n(две панели, один инструмент)"]
         B1[🔎 PSDP: предобработка]
         B2[📦 Batcher: атомарная доставка]
     end
@@ -92,4 +92,5 @@ flowchart LR
     A1 --> ProcessingUnit
     A2 --> ProcessingUnit
     ProcessingUnit --> Inferno
+
 
