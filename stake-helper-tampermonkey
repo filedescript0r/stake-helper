@@ -69,6 +69,29 @@
     #stake-meta { color:#9fb3d9; font-size:12px; margin-left:6px; }
   `);
 
+ addStyle(`
+    /* --- Markdown оформление (как на GitHub) --- */
+    #stake-view.markdown-body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+      line-height: 1.6;
+      font-size: 14px;
+      color: #cfe7ff;
+    }
+    #stake-view.markdown-body h1 { font-size: 1.6em; margin: 1em 0 0.6em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: .3em; }
+    #stake-view.markdown-body h2 { font-size: 1.3em; margin: 1em 0 0.6em; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: .2em; }
+    #stake-view.markdown-body h3 { font-size: 1.15em; margin: 0.8em 0 0.4em; }
+    #stake-view.markdown-body ul,
+    #stake-view.markdown-body ol { padding-left: 1.5em; margin: .5em 0; }
+    #stake-view.markdown-body li { margin: 0.3em 0; }
+    #stake-view.markdown-body code { background: rgba(255,255,255,0.08); padding: 2px 4px; border-radius: 4px; font-size: 0.9em; }
+    #stake-view.markdown-body pre { background: rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 6px; overflow-x: auto; }
+    #stake-view.markdown-body pre code { background: none; padding: 0; }
+    #stake-view.markdown-body blockquote { border-left: 3px solid #1a84d6; margin: .6em 0; padding-left: .8em; color: #9fb3d9; }
+    #stake-view.markdown-body table { border-collapse: collapse; margin: 1em 0; }
+    #stake-view.markdown-body table th,
+    #stake-view.markdown-body table td { border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; }
+  `);
+
   // ---- UI элементы ----
   const btn = document.createElement('div');
   btn.id = 'stake-helper-btn';
@@ -132,6 +155,7 @@
 
   function renderText() {
     try {
+      viewEl.classList.add("markdown-body");
       viewEl.innerHTML = marked.parse(data[active] || '');
     } catch {
       viewEl.textContent = data[active] || '';
