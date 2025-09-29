@@ -41,7 +41,7 @@
 
 ## Запуск и рабочий процесс
 
-1. Получите у поставщика `Inferno` javascript файлы `PSDP` & `Batcher`.
+1. Получите у поставщика `Inferno` javascript файлы `PSDP`, `Batcher` и исходный код `Inferno`.
 2. Установите в `Tampermonkey` `PSDP` & `Batcher`.
 3. Перейдите на любой сайт (включая зеркала) Stake.com
 4. Готово! На вашем экране появилось 2 панели: Dice Stats Panel (`PSDP`) (её можно перемещать по экрану), и Batch Dice-Roll Submission and Tracking (`Batcher`) (она закреплена снизу слева).
