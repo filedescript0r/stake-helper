@@ -1,4 +1,4 @@
-# batcher
+# Batcher
 
 ## Что такое Batcher
 
